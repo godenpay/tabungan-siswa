@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabungan Siswa Kelas 7</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <div class="max-w-6xl mx-auto p-4 md:p-8">
+        <header class="mb-8 flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">Aplikasi Tabungan Kelas 7</h1>
+                <p class="text-sm text-slate-500">Panel Khusus Wali Kelas</p>
+            </div>
+            <div class="p-3 bg-blue-50 text-blue-600 rounded-full">
+                <i data-lucide="wallet" class="h-6 w-6"></i>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="p-4 bg-emerald-50 text-emerald-600 rounded-xl"><i data-lucide="trending-up"></i></div>
+                <div>
+                    <p class="text-xs text-slate-500 uppercase font-semibold">Total Setoran</p>
+                    <p class="text-xl font-bold text-slate-900" id="totalSetoran">Rp 0</p>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="p-4 bg-rose-50 text-rose-600 rounded-xl"><i data-lucide="trending-down"></i></div>
+                <div>
+                    <p class="text-xs text-slate-500 uppercase font-semibold">Total Penarikan</p>
+                    <p class="text-xl font-bold text-slate-900" id="totalPenarikan">Rp 0</p>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                <div class="p-4 bg-blue-50 text-blue-600 rounded-xl"><i data-lucide="banknote"></i></div>
+                <div>
+                    <p class="text-xs text-slate-500 uppercase font-semibold">Kas Tabungan Kelas</p>
+                    <p class="text-xl font-bold text-blue-600" id="kasKelas">Rp 0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-fit">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="text-blue-500"></i> Catat Transaksi
+                </h2>
+                <form id="formTransaksi" onsubmit="simpanTransaksi(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Tanggal</label>
+                        <input type="date" id="tglTx" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Nama Siswa</label>
+                        <select id="siswaSelect" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500">
+                            <option value="">-- Pilih Siswa --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Tipe Transaksi</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex items-center justify-center gap-2 border border-slate-200 rounded-xl p-3 cursor-pointer hover:bg-slate-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50">
+                                <input type="radio" name="tipeTx" value="Setoran" checked class="text-emerald-500 focus:ring-emerald-500"> Setoran
+                            </label>
+                            <label class="flex items-center justify-center gap-2 border border-slate-200 rounded-xl p-3 cursor-pointer hover:bg-slate-50 has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/50">
+                                <input type="radio" name="tipeTx" value="Penarikan" class="text-rose-500 focus:ring-rose-500"> Penarikan
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Jumlah (Rp)</label>
+                        <input type="number" id="jumlahTx" min="500" required placeholder="Contoh: 10000" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Keterangan</label>
+                        <input type="text" id="ketTx" placeholder="Catatan opsional..." class="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition-colors shadow-sm">
+                        Simpan Transaksi
+                    </button>
+                </form>
+            </div>
+
+            <div class="lg:col-span-2 space-y-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <h2 class="text-lg font-bold text-slate-900">Riwayat Transaksi</h2>
+                        <input type="text" id="cariSiswa" onkeyup="filterTabel()" placeholder="Cari nama siswa..." class="border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-100">
+                            <thead>
+                                <tr class="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                    <th class="py-3 px-4">Tanggal</th>
+                                    <th class="py-3 px-4">Siswa</th>
+                                    <th class="py-3 px-4">Tipe</th>
+                                    <th class="py-3 px-4 text-right">Jumlah</th>
+                                    <th class="py-3 px-4">Ket</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelBody" class="divide-y divide-slate-100 text-sm">
+                                <tr>
+                                    <td colspan="5" class="py-8 text-center text-slate-400">Memuat data dari Google Sheets...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx0IJsoVxzLOirZxJr3u_hzHuluVIYgduIgUNVN1jsLLc3XlGIrDI96jAFsYgbIg4au/exec";
+
+        let dbData = { siswa: [], transaksi: [] };
+
+        // Set default date hari ini
+        document.getElementById('tglTx').valueAsDate = new Date();
+
+        async function muatData() {
+            try {
+                const res = await fetch(SCRIPT_URL);
+                const json = await res.json();
+                if (json.status === 'success') {
+                    dbData = json.data;
+                    renderSiswaSelect();
+                    renderTable();
+                    renderDasbor();
+                }
+            } catch (err) {
+                console.error("Gagal memuat data:", err);
+            }
+        }
+
+        function renderSiswaSelect() {
+            const select = document.getElementById('siswaSelect');
+            select.innerHTML = '<option value="">-- Pilih Siswa --</option>';
+            dbData.siswa.forEach(s => {
+                select.innerHTML += `<option value="${s.id}" data-nama="${s.nama}" data-saldo="${s.saldo}">${s.nama} (Saldo: Rp ${s.saldo.toLocaleString('id-ID')})</option>`;
+            });
+        }
+
+        function renderDasbor() {
+            let totalIn = 0;
+            let totalOut = 0;
+            dbData.transaksi.forEach(t => {
+                if (t.tipe === 'Setoran') totalIn += t.jumlah;
+                if (t.tipe === 'Penarikan') totalOut += t.jumlah;
+            });
+
+            document.getElementById('totalSetoran').innerText = `Rp ${totalIn.toLocaleString('id-ID')}`;
+            document.getElementById('totalPenarikan').innerText = `Rp ${totalOut.toLocaleString('id-ID')}`;
+            document.getElementById('kasKelas').innerText = `Rp ${(totalIn - totalOut).toLocaleString('id-ID')}`;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tabelBody');
+            tbody.innerHTML = '';
+            
+            if (dbData.transaksi.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-400">Belum ada transaksi recorded.</td></tr>';
+                return;
+            }
+
+            dbData.transaksi.forEach(t => {
+                const isSetor = t.tipe === 'Setoran';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="py-4 px-4 whitespace-nowrap text-slate-500">${t.tanggal}</td>
+                        <td class="py-4 px-4 font-medium text-slate-900">${t.namaSiswa}</td>
+                        <td class="py-4 px-4">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isSetor ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
+                                ${t.tipe}
+                            </span>
+                        </td>
+                        <td class="py-4 px-4 text-right font-semibold ${isSetor ? 'text-emerald-600' : 'text-rose-600'}">
+                            ${isSetor ? '+' : '-'} Rp ${t.jumlah.toLocaleString('id-ID')}
+                        </td>
+                        <td class="py-4 px-4 text-slate-500">${t.keterangan || '-'}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function simpanTransaksi(e) {
+            e.preventDefault();
+            const selectEl = document.getElementById('siswaSelect');
+            const selectedOpt = selectEl.options[selectEl.selectedIndex];
+            
+            const payload = {
+                tanggal: document.getElementById('tglTx').value,
+                idSiswa: selectEl.value,
+                namaSiswa: selectedOpt.getAttribute('data-nama'),
+                tipe: document.querySelector('input[name="tipeTx"]:checked').value,
+                jumlah: Number(document.getElementById('jumlahTx').value),
+                keterangan: document.getElementById('ketTx').value
+            };
+
+            // Validasi saldo jika penarikan
+            if (payload.tipe === 'Penarikan') {
+                const saldoSiswa = Number(selectedOpt.getAttribute('data-saldo'));
+                if (payload.jumlah > saldoSiswa) {
+                    alert(`Gagal! Saldo ${payload.namaSiswa} tidak mencukupi. (Sisa saldo: Rp ${saldoSiswa.toLocaleString('id-ID')})`);
+                    return;
+                }
+            }
+
+            // Kirim ke Google Apps Script
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Penting agar tidak terblokir CORS Google
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                alert("Transaksi berhasil dicatat!");
+                document.getElementById('formTransaksi').reset();
+                document.getElementById('tglTx').valueAsDate = new Date();
+                
+                // Refresh data secara lokal
+                muatData();
+            } catch (err) {
+                console.error("Gagal mengirim transaksi:", err);
+                alert("Ada kesalahan koneksi.");
+            }
+        }
+
+        function filterTabel() {
+            const cari = document.getElementById('cariSiswa').value.toLowerCase();
+            const rows = document.querySelectorAll('#tabelBody tr');
+            rows.forEach(row => {
+                const nama = row.cells[1]?.innerText.toLowerCase();
+                if (nama) {
+                    row.style.display = nama.includes(cari) ? '' : 'none';
+                }
+            });
+        }
+
+        // Jalankan aplikasi pertama kali
+        lucide.createIcons();
+        muatData();
+    </script>
+</body>
+</html>
