@@ -10,7 +10,7 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen">
 
     <div class="max-w-6xl mx-auto p-4 md:p-8">
-        <header class="mb-8 flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <header class="mb-8 flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100 print:hidden">
             <div>
                 <h1 class="text-2xl font-bold text-slate-900">Aplikasi Tabungan Kelas 7</h1>
                 <p class="text-sm text-slate-500">Panel Khusus Wali Kelas</p>
@@ -20,6 +20,16 @@
             </div>
         </header>
 
+        <div class="flex gap-2 mb-6 print:hidden">
+            <button type="button" onclick="gantiMenu('dashboard')" id="tabDashboard" class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-blue-600 text-white shadow-sm transition-colors">
+                <i data-lucide="layout-dashboard" class="h-4 w-4"></i> Dashboard
+            </button>
+            <button type="button" onclick="gantiMenu('laporan')" id="tabLaporan" class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">
+                <i data-lucide="file-text" class="h-4 w-4"></i> Laporan
+            </button>
+        </div>
+
+        <div id="viewDashboard">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
                 <div class="p-4 bg-emerald-50 text-emerald-600 rounded-xl"><i data-lucide="trending-up"></i></div>
@@ -116,6 +126,87 @@
                 </div>
             </div>
         </div>
+        </div>
+        <!-- /viewDashboard -->
+
+        <div id="viewLaporan" class="hidden space-y-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 print:hidden">
+                <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <i data-lucide="user-round" class="text-blue-500"></i> Laporan Tabungan per Siswa
+                </h2>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <select id="laporanSiswaSelect" onchange="tampilkanLaporanSiswa()" class="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500">
+                        <option value="">-- Pilih Siswa --</option>
+                    </select>
+                    <button type="button" onclick="cetakLaporanSiswa()" class="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors">
+                        <i data-lucide="printer" class="h-4 w-4"></i> Cetak Buku Tabungan
+                    </button>
+                </div>
+            </div>
+
+            <div id="laporanSiswaKosong" class="bg-white p-10 rounded-2xl shadow-sm border border-slate-100 text-center text-slate-400 text-sm">
+                Pilih siswa di atas untuk melihat laporan tabungannya.
+            </div>
+
+            <div id="laporanSiswaCard" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1 print:mb-4">
+                    <div>
+                        <p class="text-xs text-slate-400 uppercase font-semibold hidden print:block">Buku Tabungan Siswa</p>
+                        <h3 class="text-xl font-bold text-slate-900" id="laporanNamaSiswa">-</h3>
+                        <p class="text-xs text-slate-400" id="laporanIdSiswa">-</p>
+                    </div>
+                    <div class="text-left sm:text-right">
+                        <p class="text-xs text-slate-500 uppercase font-semibold">Saldo Saat Ini</p>
+                        <p class="text-2xl font-bold text-blue-600" id="laporanSaldoSiswa">Rp 0</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto mt-4">
+                    <table class="min-w-full divide-y divide-slate-100">
+                        <thead>
+                            <tr class="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                <th class="py-3 px-4">Tanggal</th>
+                                <th class="py-3 px-4">Tipe</th>
+                                <th class="py-3 px-4 text-right">Jumlah</th>
+                                <th class="py-3 px-4 text-right">Saldo Berjalan</th>
+                                <th class="py-3 px-4">Ket</th>
+                            </tr>
+                        </thead>
+                        <tbody id="laporanSiswaTabelBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 print:hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <h2 class="text-lg font-bold text-slate-900">Data Transaksi (Semua Siswa)</h2>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <select id="laporanFilterTipe" onchange="renderLaporanTabelTransaksi()" class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <option value="">Semua Tipe</option>
+                            <option value="Setoran">Setoran</option>
+                            <option value="Penarikan">Penarikan</option>
+                        </select>
+                        <input type="date" id="laporanDari" onchange="renderLaporanTabelTransaksi()" class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        <input type="date" id="laporanSampai" onchange="renderLaporanTabelTransaksi()" class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        <input type="text" id="laporanCariSiswa" oninput="renderLaporanTabelTransaksi()" placeholder="Cari nama siswa..." class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-100">
+                        <thead>
+                            <tr class="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                <th class="py-3 px-4">Tanggal</th>
+                                <th class="py-3 px-4">Siswa</th>
+                                <th class="py-3 px-4">Tipe</th>
+                                <th class="py-3 px-4 text-right">Jumlah</th>
+                                <th class="py-3 px-4">Ket</th>
+                            </tr>
+                        </thead>
+                        <tbody id="laporanTabelBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- /viewLaporan -->
     </div>
 
     <div id="modalSiswaBaru" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
@@ -331,6 +422,152 @@
                 body: JSON.stringify(payload)
             });
             return await res.json();
+        }
+
+        // ===== MENU LAPORAN =====
+        function gantiMenu(menu) {
+            const btnDash = document.getElementById('tabDashboard');
+            const btnLap = document.getElementById('tabLaporan');
+            const viewDash = document.getElementById('viewDashboard');
+            const viewLap = document.getElementById('viewLaporan');
+
+            const aktif = 'bg-blue-600 text-white shadow-sm';
+            const nonaktif = 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50';
+
+            if (menu === 'laporan') {
+                viewDash.classList.add('hidden');
+                viewLap.classList.remove('hidden');
+                btnLap.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ' + aktif;
+                btnDash.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ' + nonaktif;
+                renderLaporanSiswaSelect();
+                renderLaporanTabelTransaksi();
+            } else {
+                viewLap.classList.add('hidden');
+                viewDash.classList.remove('hidden');
+                btnDash.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ' + aktif;
+                btnLap.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ' + nonaktif;
+            }
+        }
+
+        function renderLaporanSiswaSelect() {
+            const select = document.getElementById('laporanSiswaSelect');
+            const nilaiTerpilih = select.value;
+            select.innerHTML = '<option value="">-- Pilih Siswa --</option>';
+            dbData.siswa.forEach(s => {
+                select.innerHTML += `<option value="${s.id}">${s.nama}</option>`;
+            });
+            select.value = nilaiTerpilih;
+        }
+
+        function tampilkanLaporanSiswa() {
+            const idSiswa = document.getElementById('laporanSiswaSelect').value;
+            const kartu = document.getElementById('laporanSiswaCard');
+            const kosong = document.getElementById('laporanSiswaKosong');
+
+            if (!idSiswa) {
+                kartu.classList.add('hidden');
+                kosong.classList.remove('hidden');
+                return;
+            }
+
+            const siswa = dbData.siswa.find(s => s.id === idSiswa);
+            if (!siswa) return;
+
+            kosong.classList.add('hidden');
+            kartu.classList.remove('hidden');
+
+            document.getElementById('laporanNamaSiswa').innerText = siswa.nama;
+            document.getElementById('laporanIdSiswa').innerText = siswa.id;
+            document.getElementById('laporanSaldoSiswa').innerText = `Rp ${siswa.saldo.toLocaleString('id-ID')}`;
+
+            // dbData.transaksi sudah urut terbaru->terlama (lihat doGet .reverse()).
+            // Untuk hitung saldo berjalan yang benar, proses secara kronologis (terlama->terbaru) dulu,
+            // baru dibalik lagi supaya tampilan tetap terbaru di atas.
+            const riwayat = dbData.transaksi.filter(t => t.idSiswa === idSiswa);
+            const kronologis = [...riwayat].reverse();
+
+            let saldoBerjalan = 0;
+            const denganSaldo = kronologis.map(t => {
+                saldoBerjalan += (t.tipe === 'Setoran' ? 1 : -1) * t.jumlah;
+                return { ...t, saldoBerjalan };
+            }).reverse();
+
+            const tbody = document.getElementById('laporanSiswaTabelBody');
+            tbody.innerHTML = '';
+
+            if (denganSaldo.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-400">Belum ada transaksi untuk siswa ini.</td></tr>';
+                return;
+            }
+
+            denganSaldo.forEach(t => {
+                const isSetor = t.tipe === 'Setoran';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${t.tanggal}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isSetor ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
+                                ${t.tipe}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right font-semibold ${isSetor ? 'text-emerald-600' : 'text-rose-600'}">
+                            ${isSetor ? '+' : '-'} Rp ${t.jumlah.toLocaleString('id-ID')}
+                        </td>
+                        <td class="py-3 px-4 text-right font-semibold text-slate-700">Rp ${t.saldoBerjalan.toLocaleString('id-ID')}</td>
+                        <td class="py-3 px-4 text-slate-500">${t.keterangan || '-'}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderLaporanTabelTransaksi() {
+            const tipe = document.getElementById('laporanFilterTipe').value;
+            const dari = document.getElementById('laporanDari').value;
+            const sampai = document.getElementById('laporanSampai').value;
+            const cari = document.getElementById('laporanCariSiswa').value.toLowerCase();
+
+            const hasil = dbData.transaksi.filter(t => {
+                if (tipe && t.tipe !== tipe) return false;
+                if (dari && t.tanggal < dari) return false;
+                if (sampai && t.tanggal > sampai) return false;
+                if (cari && !t.namaSiswa.toLowerCase().includes(cari)) return false;
+                return true;
+            });
+
+            const tbody = document.getElementById('laporanTabelBody');
+            tbody.innerHTML = '';
+
+            if (hasil.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-400">Tidak ada transaksi yang cocok dengan filter.</td></tr>';
+                return;
+            }
+
+            hasil.forEach(t => {
+                const isSetor = t.tipe === 'Setoran';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${t.tanggal}</td>
+                        <td class="py-3 px-4 font-medium text-slate-900">${t.namaSiswa}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isSetor ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
+                                ${t.tipe}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right font-semibold ${isSetor ? 'text-emerald-600' : 'text-rose-600'}">
+                            ${isSetor ? '+' : '-'} Rp ${t.jumlah.toLocaleString('id-ID')}
+                        </td>
+                        <td class="py-3 px-4 text-slate-500">${t.keterangan || '-'}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function cetakLaporanSiswa() {
+            if (!document.getElementById('laporanSiswaSelect').value) {
+                alert('Pilih siswa terlebih dahulu sebelum mencetak.');
+                return;
+            }
+            window.print();
         }
 
         function filterTabel() {
