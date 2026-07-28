@@ -242,6 +242,22 @@
 
         const NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
+        // Sanitasi tampilan Bulan: kalau nilainya kebetulan berupa Date.toString() yang bocor
+        // (mis. data lama sebelum kolom G dikunci Plain Text di backend), tampilkan label
+        // singkat "NamaBulan Tahun", bukan teks GMT mentah.
+        function formatBulanTampilan(nilai) {
+            if (!nilai) return '';
+            const str = nilai.toString();
+            if (/GMT/.test(str)) {
+                const d = new Date(str);
+                if (!isNaN(d.getTime())) {
+                    return NAMA_BULAN[d.getMonth()] + ' ' + d.getFullYear();
+                }
+                return '';
+            }
+            return str;
+        }
+
         // Format tanggal untuk tampilan: selalu dd/mm/yyyy singkat, tidak pernah teks GMT,
         // apapun bentuk mentahnya dari server (string ISO normal, atau — kalau ada bug lama —
         // hasil Date.toString() browser yang kepanjangan).
@@ -446,7 +462,7 @@
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50">
                         <td class="py-4 px-4 whitespace-nowrap text-slate-500">${formatTanggalTampilan(t.tanggal)}</td>
-                        <td class="py-4 px-4 whitespace-nowrap text-slate-500">${t.bulan || namaBulan(t.tanggal)}</td>
+                        <td class="py-4 px-4 whitespace-nowrap text-slate-500">${formatBulanTampilan(t.bulan) || namaBulan(t.tanggal)}</td>
                         <td class="py-4 px-4 font-medium text-slate-900">${t.namaSiswa}</td>
                         <td class="py-4 px-4">
                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isSetor ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
@@ -698,7 +714,7 @@
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50">
                         <td class="py-3 px-4 whitespace-nowrap text-slate-500">${formatTanggalTampilan(t.tanggal)}</td>
-                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${t.bulan || namaBulan(t.tanggal)}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${formatBulanTampilan(t.bulan) || namaBulan(t.tanggal)}</td>
                         <td class="py-3 px-4">
                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isSetor ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
                                 ${t.tipe}
@@ -741,7 +757,7 @@
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50">
                         <td class="py-3 px-4 whitespace-nowrap text-slate-500">${formatTanggalTampilan(t.tanggal)}</td>
-                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${t.bulan || namaBulan(t.tanggal)}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${formatBulanTampilan(t.bulan) || namaBulan(t.tanggal)}</td>
                         <td class="py-3 px-4 font-medium text-slate-900">${t.namaSiswa}</td>
                         <td class="py-3 px-4">
                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isSetor ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
