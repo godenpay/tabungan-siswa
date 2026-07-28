@@ -241,6 +241,34 @@
 
         const NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
+        // Format tanggal untuk tampilan: selalu dd/mm/yyyy singkat, tidak pernah teks GMT,
+        // apapun bentuk mentahnya dari server (string ISO normal, atau — kalau ada bug lama —
+        // hasil Date.toString() browser yang kepanjangan).
+        function formatTanggalTampilan(nilai) {
+            if (!nilai) return '-';
+            const str = nilai.toString();
+
+            // Kasus bermasalah: string mengandung "GMT" (hasil Date.toString() yang bocor).
+            // Parse ulang lalu ambil komponen tanggalnya saja.
+            if (/GMT/.test(str)) {
+                const d = new Date(str);
+                if (!isNaN(d.getTime())) {
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    return `${dd}/${mm}/${d.getFullYear()}`;
+                }
+                return '-';
+            }
+
+            // Kasus normal: 'yyyy-MM-dd' (dari <input type="date"> / doGet yang benar)
+            const cocok = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (cocok) {
+                return `${cocok[3]}/${cocok[2]}/${cocok[1]}`;
+            }
+
+            return str; // fallback apa adanya, tidak pernah terjadi dalam kondisi normal
+        }
+
         // Ambil nama bulan dari string tanggal 'yyyy-MM-dd' tanpa lewat Date()
         // supaya tidak kena pergeseran timezone (Date('yyyy-MM-dd') dibaca sebagai UTC oleh browser).
         function namaBulan(tanggalStr) {
@@ -249,6 +277,82 @@
             if (bagian.length < 2) return '-';
             const idx = parseInt(bagian[1], 10) - 1;
             return NAMA_BULAN[idx] || '-';
+        }
+
+        // Alias nama/singkatan bulan yang dikenali di teks keterangan.
+        // Kunci diurutkan dari yang terpanjang saat dicocokkan supaya "september" tidak
+        // ketangkap sebagai "sep" duluan lalu sisa hurufnya bikin salah potong.
+        const BULAN_ALIAS = {
+            'januari': 0, 'jan': 0,
+            'februari': 1, 'feb': 1,
+            'maret': 2, 'mar': 2,
+            'april': 3, 'apr': 3,
+            'mei': 4,
+            'juni': 5, 'jun': 5,
+            'juli': 6, 'jul': 6,
+            'agustus': 7, 'agt': 7, 'ags': 7, 'agu': 7,
+            'september': 8, 'sept': 8, 'sep': 8,
+            'oktober': 9, 'okt': 9,
+            'november': 10, 'nov': 10,
+            'desember': 11, 'des': 11
+        };
+
+        // Coba deteksi bulan (bisa lebih dari satu) dari teks keterangan bebas.
+        // Mengembalikan array [{bulan: 0-11, tahun}, ...] terurut kronologis, atau null jika tidak terdeteksi.
+        // Ini best-effort, BUKAN sumber kebenaran — makanya hasilnya selalu ditampilkan
+        // ke pengguna untuk dikonfirmasi sebelum ditulis ke spreadsheet.
+        function deteksiBulanDariKeterangan(teks, tahunAcuan) {
+            if (!teks) return null;
+            const t = teks.toLowerCase();
+
+            // Pola "1 tahun" / "setahun" / "12 bulan" -> anggap mencakup Jan-Des tahun acuan
+            if (/\bsetahun\b|\b1\s*tahun\b|\b12\s*bulan\b/.test(t)) {
+                return Array.from({ length: 12 }, (_, i) => ({ bulan: i, tahun: tahunAcuan }));
+            }
+
+            const kunci = Object.keys(BULAN_ALIAS).sort((a, b) => b.length - a.length);
+            const pola = new RegExp('\\b(' + kunci.join('|') + ')\\b', 'g');
+            const ditemukan = [];
+            let m;
+            while ((m = pola.exec(t)) !== null) {
+                ditemukan.push({ kata: m[1], index: m.index, idx: BULAN_ALIAS[m[1]] });
+            }
+
+            if (ditemukan.length === 0) return null;
+
+            // Pola rentang: "juli - desember" / "juli sampai desember" / "juli s.d desember"
+            if (ditemukan.length === 2) {
+                const antara = t.slice(ditemukan[0].index + ditemukan[0].kata.length, ditemukan[1].index);
+                if (/^\s*(-|s\.?d\.?|sampai|hingga)\s*$/.test(antara)) {
+                    const a = ditemukan[0].idx;
+                    const b = ditemukan[1].idx;
+                    const hasil = [];
+                    if (a <= b) {
+                        for (let i = a; i <= b; i++) hasil.push({ bulan: i, tahun: tahunAcuan });
+                    } else {
+                        // rentang lintas tahun, mis. "November - Februari"
+                        for (let i = a; i <= 11; i++) hasil.push({ bulan: i, tahun: tahunAcuan });
+                        for (let i = 0; i <= b; i++) hasil.push({ bulan: i, tahun: tahunAcuan + 1 });
+                    }
+                    return hasil;
+                }
+            }
+
+            // Selain itu: anggap daftar bulan terpisah (mis. "juli, agustus dan september")
+            const idxTerlihat = new Set();
+            const unik = [];
+            ditemukan.forEach(d => {
+                if (!idxTerlihat.has(d.idx)) {
+                    idxTerlihat.add(d.idx);
+                    unik.push({ bulan: d.idx, tahun: tahunAcuan });
+                }
+            });
+            return unik;
+        }
+
+        // Label tampilan untuk satu entri {bulan, tahun} hasil deteksi
+        function labelBulanTahun(entri, tahunAcuan) {
+            return NAMA_BULAN[entri.bulan] + (entri.tahun !== tahunAcuan ? ' ' + entri.tahun : '');
         }
 
         function getToken() {
@@ -316,8 +420,8 @@
                 const isSetor = t.tipe === 'Setoran';
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50">
-                        <td class="py-4 px-4 whitespace-nowrap text-slate-500">${t.tanggal}</td>
-                        <td class="py-4 px-4 whitespace-nowrap text-slate-500">${namaBulan(t.tanggal)}</td>
+                        <td class="py-4 px-4 whitespace-nowrap text-slate-500">${formatTanggalTampilan(t.tanggal)}</td>
+                        <td class="py-4 px-4 whitespace-nowrap text-slate-500">${t.bulan || namaBulan(t.tanggal)}</td>
                         <td class="py-4 px-4 font-medium text-slate-900">${t.namaSiswa}</td>
                         <td class="py-4 px-4">
                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isSetor ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
@@ -362,19 +466,67 @@
                 }
             }
 
+            // Deteksi bulan dari keterangan HANYA untuk Setoran — penarikan multi-bulan
+            // tidak punya arti nyata di sistem ini, jadi tidak dicoba dipecah.
+            let rencanaKirim = [payload]; // default: kirim apa adanya, 1 baris
+
+            if (payload.tipe === 'Setoran') {
+                const tahunTx = new Date(payload.tanggal + 'T00:00:00').getFullYear();
+                const deteksi = deteksiBulanDariKeterangan(payload.keterangan, tahunTx);
+
+                if (deteksi && deteksi.length === 1) {
+                    payload.bulan = labelBulanTahun(deteksi[0], tahunTx);
+                    rencanaKirim = [payload];
+                } else if (deteksi && deteksi.length > 1) {
+                    const n = deteksi.length;
+                    const bagian = Math.floor(payload.jumlah / n);
+                    const sisa = payload.jumlah - bagian * (n - 1); // baris terakhir menampung sisa pembulatan
+
+                    const daftarPreview = deteksi.map((d, i) => {
+                        const jumlahBaris = i === n - 1 ? sisa : bagian;
+                        return `- ${labelBulanTahun(d, tahunTx)}: Rp ${jumlahBaris.toLocaleString('id-ID')}`;
+                    }).join('\n');
+
+                    const konfirmasi = confirm(
+                        `Terdeteksi ${n} bulan dari keterangan "${payload.keterangan}":\n\n${daftarPreview}\n\n` +
+                        `Total tetap Rp ${payload.jumlah.toLocaleString('id-ID')}, akan dicatat sebagai ${n} baris transaksi terpisah (satu per bulan).\n\n` +
+                        `Lanjutkan? Jika ini salah deteksi, klik Batal lalu perjelas keterangannya.`
+                    );
+
+                    if (!konfirmasi) {
+                        return; // batal total, tidak ada yang dikirim
+                    }
+
+                    rencanaKirim = deteksi.map((d, i) => ({
+                        ...payload,
+                        jumlah: i === n - 1 ? sisa : bagian,
+                        bulan: labelBulanTahun(d, tahunTx),
+                        keterangan: payload.keterangan + ` (bagian ${i + 1}/${n} dari setoran multi-bulan)`
+                    }));
+                }
+                // deteksi === null -> tidak ada bulan terdeteksi, kirim 1 baris apa adanya (bulan kosong, fallback ke tanggal saat ditampilkan)
+            }
+
             const submitBtn = e.target.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.innerText = 'Menyimpan...';
 
             try {
-                const result = await kirimKeScript(payload);
-
-                if (result.status !== 'success') {
-                    alert("Gagal: " + result.message);
-                    return;
+                let berhasil = 0;
+                for (const item of rencanaKirim) {
+                    const result = await kirimKeScript(item);
+                    if (result.status !== 'success') {
+                        alert(`Gagal pada baris ke-${berhasil + 1} dari ${rencanaKirim.length}: ${result.message}\n\n` +
+                              `${berhasil} baris sebelumnya sudah berhasil tersimpan. Cek Riwayat Transaksi sebelum mengulang, supaya tidak dobel input.`);
+                        await muatData();
+                        return;
+                    }
+                    berhasil++;
                 }
 
-                alert("Transaksi berhasil dicatat!");
+                alert(rencanaKirim.length > 1
+                    ? `${berhasil} baris transaksi (per bulan) berhasil dicatat!`
+                    : "Transaksi berhasil dicatat!");
                 document.getElementById('formTransaksi').reset();
                 document.getElementById('tglTx').valueAsDate = new Date();
 
@@ -521,8 +673,8 @@
                 const isSetor = t.tipe === 'Setoran';
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50">
-                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${t.tanggal}</td>
-                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${namaBulan(t.tanggal)}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${formatTanggalTampilan(t.tanggal)}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${t.bulan || namaBulan(t.tanggal)}</td>
                         <td class="py-3 px-4">
                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isSetor ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
                                 ${t.tipe}
@@ -564,8 +716,8 @@
                 const isSetor = t.tipe === 'Setoran';
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50">
-                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${t.tanggal}</td>
-                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${namaBulan(t.tanggal)}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${formatTanggalTampilan(t.tanggal)}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${t.bulan || namaBulan(t.tanggal)}</td>
                         <td class="py-3 px-4 font-medium text-slate-900">${t.namaSiswa}</td>
                         <td class="py-3 px-4">
                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isSetor ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
