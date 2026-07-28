@@ -299,16 +299,39 @@
         };
 
         // Coba deteksi bulan (bisa lebih dari satu) dari teks keterangan bebas.
+        // tanggalTx: objek Date dari tanggal transaksi yang diinput — dipakai sebagai titik awal
+        // untuk pola jumlah bulan ("1 tahun", "4 bulan") yang tidak menyebut nama bulan eksplisit.
         // Mengembalikan array [{bulan: 0-11, tahun}, ...] terurut kronologis, atau null jika tidak terdeteksi.
         // Ini best-effort, BUKAN sumber kebenaran — makanya hasilnya selalu ditampilkan
         // ke pengguna untuk dikonfirmasi sebelum ditulis ke spreadsheet.
-        function deteksiBulanDariKeterangan(teks, tahunAcuan) {
+        function deteksiBulanDariKeterangan(teks, tanggalTx) {
             if (!teks) return null;
             const t = teks.toLowerCase();
+            const tahunAcuan = tanggalTx.getFullYear();
+            const bulanMulai = tanggalTx.getMonth(); // 0-11, bulan saat transaksi diinput
 
-            // Pola "1 tahun" / "setahun" / "12 bulan" -> anggap mencakup Jan-Des tahun acuan
-            if (/\bsetahun\b|\b1\s*tahun\b|\b12\s*bulan\b/.test(t)) {
-                return Array.from({ length: 12 }, (_, i) => ({ bulan: i, tahun: tahunAcuan }));
+            // N bulan berurutan MULAI DARI bulan input transaksi, maju ke depan (bukan mundur/kalender Jan-Des)
+            function nBulanKeDepan(n) {
+                return Array.from({ length: n }, (_, i) => {
+                    const total = bulanMulai + i;
+                    return { bulan: total % 12, tahun: tahunAcuan + Math.floor(total / 12) };
+                });
+            }
+
+            // Pola "1 tahun" / "setahun" -> 12 bulan ke depan mulai dari bulan input transaksi
+            if (/\bsetahun\b|\b1\s*tahun\b/.test(t)) {
+                return nBulanKeDepan(12);
+            }
+
+            // Pola umum "N bulan" (mis. "4 bulan", "12 bulan", "6 bulan") -> N bulan ke depan
+            // mulai dari bulan input transaksi. Dicek SEBELUM deteksi nama bulan eksplisit,
+            // karena pola ini tidak menyebut bulan tertentu — hanya jumlahnya.
+            const polaJumlahBulan = t.match(/\b(\d{1,2})\s*bulan\b/);
+            if (polaJumlahBulan) {
+                const n = parseInt(polaJumlahBulan[1], 10);
+                if (n > 0 && n <= 24) { // batas wajar, cegah salah ketik seperti "999 bulan"
+                    return nBulanKeDepan(n);
+                }
             }
 
             const kunci = Object.keys(BULAN_ALIAS).sort((a, b) => b.length - a.length);
@@ -321,7 +344,8 @@
 
             if (ditemukan.length === 0) return null;
 
-            // Pola rentang: "juli - desember" / "juli sampai desember" / "juli s.d desember"
+            // Pola rentang bernama eksplisit: "juli - desember" / "juli sampai desember" / "juli s.d desember"
+            // Ini pakai tahunAcuan (tahun transaksi) apa adanya karena bulannya sudah disebut jelas oleh pengguna.
             if (ditemukan.length === 2) {
                 const antara = t.slice(ditemukan[0].index + ditemukan[0].kata.length, ditemukan[1].index);
                 if (/^\s*(-|s\.?d\.?|sampai|hingga)\s*$/.test(antara)) {
@@ -472,8 +496,9 @@
             let rencanaKirim = [payload]; // default: kirim apa adanya, 1 baris
 
             if (payload.tipe === 'Setoran') {
-                const tahunTx = new Date(payload.tanggal + 'T00:00:00').getFullYear();
-                const deteksi = deteksiBulanDariKeterangan(payload.keterangan, tahunTx);
+                const tanggalTxObj = new Date(payload.tanggal + 'T00:00:00');
+                const tahunTx = tanggalTxObj.getFullYear();
+                const deteksi = deteksiBulanDariKeterangan(payload.keterangan, tanggalTxObj);
 
                 if (deteksi && deteksi.length === 1) {
                     payload.bulan = labelBulanTahun(deteksi[0], tahunTx);
