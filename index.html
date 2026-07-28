@@ -396,6 +396,26 @@
             return NAMA_BULAN[entri.bulan] + (entri.tahun !== tahunAcuan ? ' ' + entri.tahun : '');
         }
 
+        // Gabungkan beberapa entri {bulan, tahun} jadi satu label untuk kolom Bulan,
+        // dipakai saat semuanya dicatat sebagai SATU baris transaksi.
+        // Kalau berurutan tanpa jeda -> tampil sebagai rentang "Agustus 2026 - Juli 2027".
+        // Kalau tidak berurutan (mis. bulan-bulan lepas) -> tampil sebagai daftar dipisah koma.
+        function labelDaftarBulan(deteksi, tahunAcuan) {
+            if (deteksi.length === 1) return labelBulanTahun(deteksi[0], tahunAcuan);
+
+            let berurutan = true;
+            for (let i = 1; i < deteksi.length; i++) {
+                const totalSebelum = deteksi[i - 1].tahun * 12 + deteksi[i - 1].bulan;
+                const totalIni = deteksi[i].tahun * 12 + deteksi[i].bulan;
+                if (totalIni !== totalSebelum + 1) { berurutan = false; break; }
+            }
+
+            if (berurutan) {
+                return labelBulanTahun(deteksi[0], tahunAcuan) + ' - ' + labelBulanTahun(deteksi[deteksi.length - 1], tahunAcuan);
+            }
+            return deteksi.map(d => labelBulanTahun(d, tahunAcuan)).join(', ');
+        }
+
         function getToken() {
             let token = sessionStorage.getItem('tabunganToken');
             if (!token) {
@@ -523,13 +543,14 @@
                     const n = deteksi.length;
                     const jumlahPerBulan = payload.jumlah; // jumlah yang diisi = jumlah PER BULAN, bukan total
                     const totalKeseluruhan = jumlahPerBulan * n;
+                    const labelGabungan = labelDaftarBulan(deteksi, tahunTx);
 
-                    const daftarPreview = deteksi.map(d => `- ${labelBulanTahun(d, tahunTx)}: Rp ${jumlahPerBulan.toLocaleString('id-ID')}`).join('\n');
+                    const daftarPreview = deteksi.map(d => `- ${labelBulanTahun(d, tahunTx)}`).join('\n');
 
                     const konfirmasi = confirm(
                         `Terdeteksi ${n} bulan dari keterangan "${payload.keterangan}":\n\n${daftarPreview}\n\n` +
                         `Rp ${jumlahPerBulan.toLocaleString('id-ID')} x ${n} bulan = TOTAL Rp ${totalKeseluruhan.toLocaleString('id-ID')}, ` +
-                        `dicatat sebagai ${n} baris transaksi terpisah (satu per bulan, masing-masing Rp ${jumlahPerBulan.toLocaleString('id-ID')}).\n\n` +
+                        `dicatat sebagai 1 baris transaksi dengan kolom Bulan berisi "${labelGabungan}".\n\n` +
                         `Lanjutkan? Jika ini salah deteksi, klik Batal lalu perjelas keterangannya.`
                     );
 
@@ -537,12 +558,9 @@
                         return; // batal total, tidak ada yang dikirim
                     }
 
-                    rencanaKirim = deteksi.map((d, i) => ({
-                        ...payload,
-                        jumlah: jumlahPerBulan,
-                        bulan: labelBulanTahun(d, tahunTx),
-                        keterangan: payload.keterangan + ` (bagian ${i + 1}/${n} dari setoran multi-bulan)`
-                    }));
+                    payload.jumlah = totalKeseluruhan;
+                    payload.bulan = labelGabungan;
+                    rencanaKirim = [payload];
                 }
                 // deteksi === null -> tidak ada bulan terdeteksi, kirim 1 baris apa adanya (bulan kosong, fallback ke tanggal saat ditampilkan)
             }
@@ -552,21 +570,14 @@
             submitBtn.innerText = 'Menyimpan...';
 
             try {
-                let berhasil = 0;
-                for (const item of rencanaKirim) {
-                    const result = await kirimKeScript(item);
-                    if (result.status !== 'success') {
-                        alert(`Gagal pada baris ke-${berhasil + 1} dari ${rencanaKirim.length}: ${result.message}\n\n` +
-                              `${berhasil} baris sebelumnya sudah berhasil tersimpan. Cek Riwayat Transaksi sebelum mengulang, supaya tidak dobel input.`);
-                        await muatData();
-                        return;
-                    }
-                    berhasil++;
+                const result = await kirimKeScript(rencanaKirim[0]);
+
+                if (result.status !== 'success') {
+                    alert("Gagal: " + result.message);
+                    return;
                 }
 
-                alert(rencanaKirim.length > 1
-                    ? `${berhasil} baris transaksi (per bulan) berhasil dicatat!`
-                    : "Transaksi berhasil dicatat!");
+                alert("Transaksi berhasil dicatat!");
                 document.getElementById('formTransaksi').reset();
                 document.getElementById('tglTx').valueAsDate = new Date();
 
