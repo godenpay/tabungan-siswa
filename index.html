@@ -100,6 +100,18 @@
                         </div>
                         <p class="text-xs text-slate-400 mt-1.5">Peminjaman & Pengembalian dicatat khusus atas nama Wali Kelas 7, tidak menyentuh saldo siswa.</p>
                     </div>
+                    <div id="wrapSetoranBulanan" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-semibold text-slate-500 uppercase">Setoran Wajib Bulanan (opsional)</label>
+                            <button type="button" onclick="aturTarifBulanan()" class="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                <i data-lucide="settings" class="h-3 w-3"></i> Tarif: <span id="labelTarifBulanan">Rp 0</span>/bulan
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="jumlahBulanTx" min="1" placeholder="Jumlah bulan" oninput="hitungSetoranBulanan()" class="w-28 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                            <span class="text-xs text-slate-400">bulan → isi otomatis kolom Jumlah di bawah (masih bisa diedit manual)</span>
+                        </div>
+                    </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Jumlah (Rp)</label>
                         <input type="number" id="jumlahTx" min="500" required placeholder="Contoh: 10000" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500">
@@ -340,18 +352,54 @@
             updateFormUntukTipe();
         }
 
+        // Tarif setoran wajib bulanan — sama untuk semua siswa, disimpan lokal di
+        // browser (localStorage) supaya tetap ingat walau halaman ditutup/dibuka lagi.
+        // Ini murni bantuan pengisian form; angka yang benar-benar tersimpan ke server
+        // tetap nilai di kolom "Jumlah (Rp)", bukan tarif ini.
+        const TARIF_BULANAN_KEY = 'tarifSetoranBulanan';
+        const TARIF_BULANAN_DEFAULT = 10000;
+
+        function getTarifBulanan() {
+            const v = Number(localStorage.getItem(TARIF_BULANAN_KEY));
+            return (v && v > 0) ? v : TARIF_BULANAN_DEFAULT;
+        }
+
+        function aturTarifBulanan() {
+            const skrg = getTarifBulanan();
+            const input = prompt('Tarif setoran wajib per bulan (Rp), berlaku sama untuk semua siswa:', skrg);
+            if (input === null) return; // batal
+            const nilai = Number(input);
+            if (!nilai || nilai <= 0) {
+                alert('Isi angka yang valid.');
+                return;
+            }
+            localStorage.setItem(TARIF_BULANAN_KEY, nilai);
+            document.getElementById('labelTarifBulanan').innerText = `Rp ${nilai.toLocaleString('id-ID')}`;
+            hitungSetoranBulanan();
+        }
+
+        function hitungSetoranBulanan() {
+            const bulan = Number(document.getElementById('jumlahBulanTx').value);
+            if (!bulan || bulan <= 0) return;
+            document.getElementById('jumlahTx').value = getTarifBulanan() * bulan;
+        }
+
         // Tampilkan/sembunyikan pilihan Nama Siswa vs akun tetap Wali Kelas 7,
         // tergantung tipe transaksi yang dipilih.
         function updateFormUntukTipe() {
             const tipe = document.querySelector('input[name="tipeTx"]:checked').value;
             const wrapSiswa = document.getElementById('wrapSiswaSelect');
             const wrapWali = document.getElementById('wrapWaliKelas');
+            const wrapBulanan = document.getElementById('wrapSetoranBulanan');
             const selectSiswa = document.getElementById('siswaSelect');
             const untukWali = (tipe === 'Peminjaman' || tipe === 'Pengembalian');
 
             wrapSiswa.classList.toggle('hidden', untukWali);
             wrapWali.classList.toggle('hidden', !untukWali);
             selectSiswa.required = !untukWali;
+
+            wrapBulanan.classList.toggle('hidden', tipe !== 'Setoran');
+            document.getElementById('labelTarifBulanan').innerText = `Rp ${getTarifBulanan().toLocaleString('id-ID')}`;
         }
 
         function renderDasbor() {
