@@ -77,19 +77,25 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Tipe Transaksi</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <label class="flex items-center justify-center gap-2 border border-slate-200 rounded-xl p-3 cursor-pointer hover:bg-slate-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50">
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center justify-center gap-2 border border-slate-200 rounded-xl p-3 cursor-pointer hover:bg-slate-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50 text-sm">
                                 <input type="radio" name="tipeTx" value="Setoran" checked class="text-emerald-500 focus:ring-emerald-500"> Setoran
                             </label>
-                            <label class="flex items-center justify-center gap-2 border border-slate-200 rounded-xl p-3 cursor-pointer hover:bg-slate-50 has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/50">
+                            <label class="flex items-center justify-center gap-2 border border-slate-200 rounded-xl p-3 cursor-pointer hover:bg-slate-50 has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/50 text-sm">
                                 <input type="radio" name="tipeTx" value="Penarikan" class="text-rose-500 focus:ring-rose-500"> Penarikan
                             </label>
+                            <label class="flex items-center justify-center gap-2 border border-slate-200 rounded-xl p-3 cursor-pointer hover:bg-slate-50 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/50 text-sm">
+                                <input type="radio" name="tipeTx" value="Peminjaman" class="text-amber-500 focus:ring-amber-500"> Peminjaman
+                            </label>
+                            <label class="flex items-center justify-center gap-2 border border-slate-200 rounded-xl p-3 cursor-pointer hover:bg-slate-50 has-[:checked]:border-sky-500 has-[:checked]:bg-sky-50/50 text-sm">
+                                <input type="radio" name="tipeTx" value="Pengembalian" class="text-sky-500 focus:ring-sky-500"> Pengembalian
+                            </label>
                         </div>
+                        <p class="text-xs text-slate-400 mt-1.5">Peminjaman boleh membuat saldo minus (berutang). Pengembalian untuk melunasinya.</p>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Jumlah (Rp)</label>
                         <input type="number" id="jumlahTx" min="500" required placeholder="Contoh: 10000" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500">
-                        <p class="text-xs text-slate-400 mt-1">Jika keterangan menyebut beberapa bulan (mis. "1 tahun"), jumlah ini dihitung PER BULAN — bukan total.</p>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Keterangan</label>
@@ -112,7 +118,6 @@
                             <thead>
                                 <tr class="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                                     <th class="py-3 px-4">Tanggal</th>
-                                    <th class="py-3 px-4">Bulan</th>
                                     <th class="py-3 px-4">Siswa</th>
                                     <th class="py-3 px-4">Tipe</th>
                                     <th class="py-3 px-4 text-right">Jumlah</th>
@@ -121,7 +126,7 @@
                             </thead>
                             <tbody id="tabelBody" class="divide-y divide-slate-100 text-sm">
                                 <tr>
-                                    <td colspan="6" class="py-8 text-center text-slate-400">Memuat data dari Google Sheets...</td>
+                                    <td colspan="5" class="py-8 text-center text-slate-400">Memuat data dari Google Sheets...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -133,6 +138,26 @@
         <!-- /viewDashboard -->
 
         <div id="viewLaporan" class="hidden space-y-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 print:hidden">
+                <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+                    <i data-lucide="hand-coins" class="text-amber-500"></i> Status Pinjaman
+                </h2>
+                <p class="text-xs text-slate-400 mb-4">Siswa dengan saldo minus (sedang berutang), terpisah dari saldo tabungan biasa.</p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-100">
+                        <thead>
+                            <tr class="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                <th class="py-3 px-4">Siswa</th>
+                                <th class="py-3 px-4 text-right">Total Dipinjam</th>
+                                <th class="py-3 px-4 text-right">Total Dikembalikan</th>
+                                <th class="py-3 px-4 text-right">Sisa Utang</th>
+                            </tr>
+                        </thead>
+                        <tbody id="laporanPinjamanBody" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 print:hidden">
                 <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                     <i data-lucide="user-round" class="text-blue-500"></i> Laporan Tabungan per Siswa
@@ -168,7 +193,6 @@
                         <thead>
                             <tr class="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                                 <th class="py-3 px-4">Tanggal</th>
-                                <th class="py-3 px-4">Bulan</th>
                                 <th class="py-3 px-4">Tipe</th>
                                 <th class="py-3 px-4 text-right">Jumlah</th>
                                 <th class="py-3 px-4 text-right">Saldo Berjalan</th>
@@ -188,6 +212,8 @@
                             <option value="">Semua Tipe</option>
                             <option value="Setoran">Setoran</option>
                             <option value="Penarikan">Penarikan</option>
+                            <option value="Peminjaman">Peminjaman</option>
+                            <option value="Pengembalian">Pengembalian</option>
                         </select>
                         <input type="date" id="laporanDari" onchange="renderLaporanTabelTransaksi()" class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                         <input type="date" id="laporanSampai" onchange="renderLaporanTabelTransaksi()" class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
@@ -199,7 +225,6 @@
                         <thead>
                             <tr class="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                                 <th class="py-3 px-4">Tanggal</th>
-                                <th class="py-3 px-4">Bulan</th>
                                 <th class="py-3 px-4">Siswa</th>
                                 <th class="py-3 px-4">Tipe</th>
                                 <th class="py-3 px-4 text-right">Jumlah</th>
@@ -240,182 +265,6 @@
 
         let dbData = { siswa: [], transaksi: [] };
 
-        const NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-
-        // Sanitasi tampilan Bulan: kalau nilainya kebetulan berupa Date.toString() yang bocor
-        // (mis. data lama sebelum kolom G dikunci Plain Text di backend), tampilkan label
-        // singkat "NamaBulan Tahun", bukan teks GMT mentah.
-        function formatBulanTampilan(nilai) {
-            if (!nilai) return '';
-            const str = nilai.toString();
-            if (/GMT/.test(str)) {
-                const d = new Date(str);
-                if (!isNaN(d.getTime())) {
-                    return NAMA_BULAN[d.getMonth()] + ' ' + d.getFullYear();
-                }
-                return '';
-            }
-            return str;
-        }
-
-        // Format tanggal untuk tampilan: selalu dd/mm/yyyy singkat, tidak pernah teks GMT,
-        // apapun bentuk mentahnya dari server (string ISO normal, atau — kalau ada bug lama —
-        // hasil Date.toString() browser yang kepanjangan).
-        function formatTanggalTampilan(nilai) {
-            if (!nilai) return '-';
-            const str = nilai.toString();
-
-            // Kasus bermasalah: string mengandung "GMT" (hasil Date.toString() yang bocor).
-            // Parse ulang lalu ambil komponen tanggalnya saja.
-            if (/GMT/.test(str)) {
-                const d = new Date(str);
-                if (!isNaN(d.getTime())) {
-                    const dd = String(d.getDate()).padStart(2, '0');
-                    const mm = String(d.getMonth() + 1).padStart(2, '0');
-                    return `${dd}/${mm}/${d.getFullYear()}`;
-                }
-                return '-';
-            }
-
-            // Kasus normal: 'yyyy-MM-dd' (dari <input type="date"> / doGet yang benar)
-            const cocok = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-            if (cocok) {
-                return `${cocok[3]}/${cocok[2]}/${cocok[1]}`;
-            }
-
-            return str; // fallback apa adanya, tidak pernah terjadi dalam kondisi normal
-        }
-
-        // Ambil nama bulan dari string tanggal 'yyyy-MM-dd' tanpa lewat Date()
-        // supaya tidak kena pergeseran timezone (Date('yyyy-MM-dd') dibaca sebagai UTC oleh browser).
-        function namaBulan(tanggalStr) {
-            if (!tanggalStr || typeof tanggalStr !== 'string') return '-';
-            const bagian = tanggalStr.split('-');
-            if (bagian.length < 2) return '-';
-            const idx = parseInt(bagian[1], 10) - 1;
-            return NAMA_BULAN[idx] || '-';
-        }
-
-        // Alias nama/singkatan bulan yang dikenali di teks keterangan.
-        // Kunci diurutkan dari yang terpanjang saat dicocokkan supaya "september" tidak
-        // ketangkap sebagai "sep" duluan lalu sisa hurufnya bikin salah potong.
-        const BULAN_ALIAS = {
-            'januari': 0, 'jan': 0,
-            'februari': 1, 'feb': 1,
-            'maret': 2, 'mar': 2,
-            'april': 3, 'apr': 3,
-            'mei': 4,
-            'juni': 5, 'jun': 5,
-            'juli': 6, 'jul': 6,
-            'agustus': 7, 'agt': 7, 'ags': 7, 'agu': 7,
-            'september': 8, 'sept': 8, 'sep': 8,
-            'oktober': 9, 'okt': 9,
-            'november': 10, 'nov': 10,
-            'desember': 11, 'des': 11
-        };
-
-        // Coba deteksi bulan (bisa lebih dari satu) dari teks keterangan bebas.
-        // tanggalTx: objek Date dari tanggal transaksi yang diinput — dipakai sebagai titik awal
-        // untuk pola jumlah bulan ("1 tahun", "4 bulan") yang tidak menyebut nama bulan eksplisit.
-        // Mengembalikan array [{bulan: 0-11, tahun}, ...] terurut kronologis, atau null jika tidak terdeteksi.
-        // Ini best-effort, BUKAN sumber kebenaran — makanya hasilnya selalu ditampilkan
-        // ke pengguna untuk dikonfirmasi sebelum ditulis ke spreadsheet.
-        function deteksiBulanDariKeterangan(teks, tanggalTx) {
-            if (!teks) return null;
-            const t = teks.toLowerCase();
-            const tahunAcuan = tanggalTx.getFullYear();
-            const bulanMulai = tanggalTx.getMonth(); // 0-11, bulan saat transaksi diinput
-
-            // N bulan berurutan MULAI DARI bulan input transaksi, maju ke depan (bukan mundur/kalender Jan-Des)
-            function nBulanKeDepan(n) {
-                return Array.from({ length: n }, (_, i) => {
-                    const total = bulanMulai + i;
-                    return { bulan: total % 12, tahun: tahunAcuan + Math.floor(total / 12) };
-                });
-            }
-
-            // Pola "1 tahun" / "setahun" -> 12 bulan ke depan mulai dari bulan input transaksi
-            if (/\bsetahun\b|\b1\s*tahun\b/.test(t)) {
-                return nBulanKeDepan(12);
-            }
-
-            // Pola umum "N bulan" (mis. "4 bulan", "12 bulan", "6 bulan") -> N bulan ke depan
-            // mulai dari bulan input transaksi. Dicek SEBELUM deteksi nama bulan eksplisit,
-            // karena pola ini tidak menyebut bulan tertentu — hanya jumlahnya.
-            const polaJumlahBulan = t.match(/\b(\d{1,2})\s*bulan\b/);
-            if (polaJumlahBulan) {
-                const n = parseInt(polaJumlahBulan[1], 10);
-                if (n > 0 && n <= 24) { // batas wajar, cegah salah ketik seperti "999 bulan"
-                    return nBulanKeDepan(n);
-                }
-            }
-
-            const kunci = Object.keys(BULAN_ALIAS).sort((a, b) => b.length - a.length);
-            const pola = new RegExp('\\b(' + kunci.join('|') + ')\\b', 'g');
-            const ditemukan = [];
-            let m;
-            while ((m = pola.exec(t)) !== null) {
-                ditemukan.push({ kata: m[1], index: m.index, idx: BULAN_ALIAS[m[1]] });
-            }
-
-            if (ditemukan.length === 0) return null;
-
-            // Pola rentang bernama eksplisit: "juli - desember" / "juli sampai desember" / "juli s.d desember"
-            // Ini pakai tahunAcuan (tahun transaksi) apa adanya karena bulannya sudah disebut jelas oleh pengguna.
-            if (ditemukan.length === 2) {
-                const antara = t.slice(ditemukan[0].index + ditemukan[0].kata.length, ditemukan[1].index);
-                if (/^\s*(-|s\.?d\.?|sampai|hingga)\s*$/.test(antara)) {
-                    const a = ditemukan[0].idx;
-                    const b = ditemukan[1].idx;
-                    const hasil = [];
-                    if (a <= b) {
-                        for (let i = a; i <= b; i++) hasil.push({ bulan: i, tahun: tahunAcuan });
-                    } else {
-                        // rentang lintas tahun, mis. "November - Februari"
-                        for (let i = a; i <= 11; i++) hasil.push({ bulan: i, tahun: tahunAcuan });
-                        for (let i = 0; i <= b; i++) hasil.push({ bulan: i, tahun: tahunAcuan + 1 });
-                    }
-                    return hasil;
-                }
-            }
-
-            // Selain itu: anggap daftar bulan terpisah (mis. "juli, agustus dan september")
-            const idxTerlihat = new Set();
-            const unik = [];
-            ditemukan.forEach(d => {
-                if (!idxTerlihat.has(d.idx)) {
-                    idxTerlihat.add(d.idx);
-                    unik.push({ bulan: d.idx, tahun: tahunAcuan });
-                }
-            });
-            return unik;
-        }
-
-        // Label tampilan untuk satu entri {bulan, tahun} hasil deteksi
-        function labelBulanTahun(entri, tahunAcuan) {
-            return NAMA_BULAN[entri.bulan] + (entri.tahun !== tahunAcuan ? ' ' + entri.tahun : '');
-        }
-
-        // Gabungkan beberapa entri {bulan, tahun} jadi satu label untuk kolom Bulan,
-        // dipakai saat semuanya dicatat sebagai SATU baris transaksi.
-        // Kalau berurutan tanpa jeda -> tampil sebagai rentang "Agustus 2026 - Juli 2027".
-        // Kalau tidak berurutan (mis. bulan-bulan lepas) -> tampil sebagai daftar dipisah koma.
-        function labelDaftarBulan(deteksi, tahunAcuan) {
-            if (deteksi.length === 1) return labelBulanTahun(deteksi[0], tahunAcuan);
-
-            let berurutan = true;
-            for (let i = 1; i < deteksi.length; i++) {
-                const totalSebelum = deteksi[i - 1].tahun * 12 + deteksi[i - 1].bulan;
-                const totalIni = deteksi[i].tahun * 12 + deteksi[i].bulan;
-                if (totalIni !== totalSebelum + 1) { berurutan = false; break; }
-            }
-
-            if (berurutan) {
-                return labelBulanTahun(deteksi[0], tahunAcuan) + ' - ' + labelBulanTahun(deteksi[deteksi.length - 1], tahunAcuan);
-            }
-            return deteksi.map(d => labelBulanTahun(d, tahunAcuan)).join(', ');
-        }
-
         function getToken() {
             let token = sessionStorage.getItem('tabunganToken');
             if (!token) {
@@ -447,6 +296,23 @@
             }
         }
 
+        // Setoran & Pengembalian menambah saldo; Penarikan & Peminjaman mengurangi saldo.
+        function isPositifTipe(tipe) {
+            return tipe === 'Setoran' || tipe === 'Pengembalian';
+        }
+        function tipeBadgeClass(tipe) {
+            switch (tipe) {
+                case 'Setoran': return 'bg-emerald-50 text-emerald-700';
+                case 'Penarikan': return 'bg-rose-50 text-rose-700';
+                case 'Peminjaman': return 'bg-amber-50 text-amber-700';
+                case 'Pengembalian': return 'bg-sky-50 text-sky-700';
+                default: return 'bg-slate-50 text-slate-700';
+            }
+        }
+        function tipeAmountClass(tipe) {
+            return isPositifTipe(tipe) ? 'text-emerald-600' : (tipe === 'Peminjaman' ? 'text-amber-600' : 'text-rose-600');
+        }
+
         function renderSiswaSelect() {
             const select = document.getElementById('siswaSelect');
             select.innerHTML = '<option value="">-- Pilih Siswa --</option>';
@@ -458,14 +324,19 @@
         function renderDasbor() {
             let totalIn = 0;
             let totalOut = 0;
+            // kasArus = kas yang benar-benar keluar/masuk dari tangan guru, termasuk pinjaman.
+            // Dipisah dari totalIn/totalOut (yang hanya untuk kartu "Total Setoran/Penarikan")
+            // supaya angka di kartu tetap murni menggambarkan tabungan, bukan pinjaman.
+            let kasArus = 0;
             dbData.transaksi.forEach(t => {
                 if (t.tipe === 'Setoran') totalIn += t.jumlah;
                 if (t.tipe === 'Penarikan') totalOut += t.jumlah;
+                kasArus += isPositifTipe(t.tipe) ? t.jumlah : -t.jumlah;
             });
 
             document.getElementById('totalSetoran').innerText = `Rp ${totalIn.toLocaleString('id-ID')}`;
             document.getElementById('totalPenarikan').innerText = `Rp ${totalOut.toLocaleString('id-ID')}`;
-            document.getElementById('kasKelas').innerText = `Rp ${(totalIn - totalOut).toLocaleString('id-ID')}`;
+            document.getElementById('kasKelas').innerText = `Rp ${kasArus.toLocaleString('id-ID')}`;
         }
 
         function renderTable() {
@@ -473,24 +344,23 @@
             tbody.innerHTML = '';
             
             if (dbData.transaksi.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-400">Belum ada transaksi recorded.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-400">Belum ada transaksi recorded.</td></tr>';
                 return;
             }
 
             dbData.transaksi.forEach(t => {
-                const isSetor = t.tipe === 'Setoran';
+                const positif = isPositifTipe(t.tipe);
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50">
-                        <td class="py-4 px-4 whitespace-nowrap text-slate-500">${formatTanggalTampilan(t.tanggal)}</td>
-                        <td class="py-4 px-4 whitespace-nowrap text-slate-500">${formatBulanTampilan(t.bulan) || namaBulan(t.tanggal)}</td>
+                        <td class="py-4 px-4 whitespace-nowrap text-slate-500">${t.tanggal}</td>
                         <td class="py-4 px-4 font-medium text-slate-900">${t.namaSiswa}</td>
                         <td class="py-4 px-4">
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isSetor ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${tipeBadgeClass(t.tipe)}">
                                 ${t.tipe}
                             </span>
                         </td>
-                        <td class="py-4 px-4 text-right font-semibold ${isSetor ? 'text-emerald-600' : 'text-rose-600'}">
-                            ${isSetor ? '+' : '-'} Rp ${t.jumlah.toLocaleString('id-ID')}
+                        <td class="py-4 px-4 text-right font-semibold ${tipeAmountClass(t.tipe)}">
+                            ${positif ? '+' : '-'} Rp ${t.jumlah.toLocaleString('id-ID')}
                         </td>
                         <td class="py-4 px-4 text-slate-500">${t.keterangan || '-'}</td>
                     </tr>
@@ -526,43 +396,13 @@
                     return;
                 }
             }
-
-            // Deteksi bulan dari keterangan HANYA untuk Setoran — penarikan multi-bulan
-            // tidak punya arti nyata di sistem ini, jadi tidak dicoba dipecah.
-            let rencanaKirim = [payload]; // default: kirim apa adanya, 1 baris
-
-            if (payload.tipe === 'Setoran') {
-                const tanggalTxObj = new Date(payload.tanggal + 'T00:00:00');
-                const tahunTx = tanggalTxObj.getFullYear();
-                const deteksi = deteksiBulanDariKeterangan(payload.keterangan, tanggalTxObj);
-
-                if (deteksi && deteksi.length === 1) {
-                    payload.bulan = labelBulanTahun(deteksi[0], tahunTx);
-                    rencanaKirim = [payload];
-                } else if (deteksi && deteksi.length > 1) {
-                    const n = deteksi.length;
-                    const jumlahPerBulan = payload.jumlah; // jumlah yang diisi = jumlah PER BULAN, bukan total
-                    const totalKeseluruhan = jumlahPerBulan * n;
-                    const labelGabungan = labelDaftarBulan(deteksi, tahunTx);
-
-                    const daftarPreview = deteksi.map(d => `- ${labelBulanTahun(d, tahunTx)}`).join('\n');
-
-                    const konfirmasi = confirm(
-                        `Terdeteksi ${n} bulan dari keterangan "${payload.keterangan}":\n\n${daftarPreview}\n\n` +
-                        `Rp ${jumlahPerBulan.toLocaleString('id-ID')} x ${n} bulan = TOTAL Rp ${totalKeseluruhan.toLocaleString('id-ID')}, ` +
-                        `dicatat sebagai 1 baris transaksi dengan kolom Bulan berisi "${labelGabungan}".\n\n` +
-                        `Lanjutkan? Jika ini salah deteksi, klik Batal lalu perjelas keterangannya.`
-                    );
-
-                    if (!konfirmasi) {
-                        return; // batal total, tidak ada yang dikirim
-                    }
-
-                    payload.jumlah = totalKeseluruhan;
-                    payload.bulan = labelGabungan;
-                    rencanaKirim = [payload];
+            if (payload.tipe === 'Peminjaman') {
+                const saldoSiswa = Number(selectedOpt.getAttribute('data-saldo'));
+                if (payload.jumlah > saldoSiswa) {
+                    const saldoBaru = saldoSiswa - payload.jumlah;
+                    const lanjut = confirm(`Saldo ${payload.namaSiswa} akan menjadi minus (Rp ${saldoBaru.toLocaleString('id-ID')}) setelah peminjaman ini. Lanjutkan?`);
+                    if (!lanjut) return;
                 }
-                // deteksi === null -> tidak ada bulan terdeteksi, kirim 1 baris apa adanya (bulan kosong, fallback ke tanggal saat ditampilkan)
             }
 
             const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -570,7 +410,7 @@
             submitBtn.innerText = 'Menyimpan...';
 
             try {
-                const result = await kirimKeScript(rencanaKirim[0]);
+                const result = await kirimKeScript(payload);
 
                 if (result.status !== 'success') {
                     alert("Gagal: " + result.message);
@@ -661,12 +501,47 @@
                 btnDash.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ' + nonaktif;
                 renderLaporanSiswaSelect();
                 renderLaporanTabelTransaksi();
+                renderLaporanStatusPinjaman();
             } else {
                 viewLap.classList.add('hidden');
                 viewDash.classList.remove('hidden');
                 btnDash.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ' + aktif;
                 btnLap.className = 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ' + nonaktif;
             }
+        }
+
+        function renderLaporanStatusPinjaman() {
+            const tbody = document.getElementById('laporanPinjamanBody');
+            tbody.innerHTML = '';
+
+            // Sisa utang dihitung dari saldo siswa yang minus. Ini akurat karena
+            // Penarikan biasa tidak pernah bisa membuat saldo minus (dicegah server) —
+            // satu-satunya sumber saldo minus adalah Peminjaman.
+            const daftarUtang = dbData.siswa
+                .filter(s => s.saldo < 0)
+                .map(s => {
+                    const riwayat = dbData.transaksi.filter(t => t.idSiswa === s.id);
+                    const totalDipinjam = riwayat.filter(t => t.tipe === 'Peminjaman').reduce((a, t) => a + t.jumlah, 0);
+                    const totalDikembalikan = riwayat.filter(t => t.tipe === 'Pengembalian').reduce((a, t) => a + t.jumlah, 0);
+                    return { ...s, totalDipinjam, totalDikembalikan, sisaUtang: -s.saldo };
+                })
+                .sort((a, b) => b.sisaUtang - a.sisaUtang);
+
+            if (daftarUtang.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-slate-400">Tidak ada siswa yang sedang berutang. 🎉</td></tr>';
+                return;
+            }
+
+            daftarUtang.forEach(s => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="py-3 px-4 font-medium text-slate-900">${s.nama}</td>
+                        <td class="py-3 px-4 text-right text-amber-600 font-semibold">Rp ${s.totalDipinjam.toLocaleString('id-ID')}</td>
+                        <td class="py-3 px-4 text-right text-sky-600 font-semibold">Rp ${s.totalDikembalikan.toLocaleString('id-ID')}</td>
+                        <td class="py-3 px-4 text-right text-rose-600 font-bold">Rp ${s.sisaUtang.toLocaleString('id-ID')}</td>
+                    </tr>
+                `;
+            });
         }
 
         function renderLaporanSiswaSelect() {
@@ -698,7 +573,10 @@
 
             document.getElementById('laporanNamaSiswa').innerText = siswa.nama;
             document.getElementById('laporanIdSiswa').innerText = siswa.id;
-            document.getElementById('laporanSaldoSiswa').innerText = `Rp ${siswa.saldo.toLocaleString('id-ID')}`;
+            const saldoNegatif = siswa.saldo < 0;
+            const saldoEl = document.getElementById('laporanSaldoSiswa');
+            saldoEl.innerText = `Rp ${siswa.saldo.toLocaleString('id-ID')}`;
+            saldoEl.className = saldoNegatif ? 'text-2xl font-bold text-amber-600' : 'text-2xl font-bold text-blue-600';
 
             // dbData.transaksi sudah urut terbaru->terlama (lihat doGet .reverse()).
             // Untuk hitung saldo berjalan yang benar, proses secara kronologis (terlama->terbaru) dulu,
@@ -708,7 +586,7 @@
 
             let saldoBerjalan = 0;
             const denganSaldo = kronologis.map(t => {
-                saldoBerjalan += (t.tipe === 'Setoran' ? 1 : -1) * t.jumlah;
+                saldoBerjalan += (isPositifTipe(t.tipe) ? 1 : -1) * t.jumlah;
                 return { ...t, saldoBerjalan };
             }).reverse();
 
@@ -716,25 +594,24 @@
             tbody.innerHTML = '';
 
             if (denganSaldo.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-400">Belum ada transaksi untuk siswa ini.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-400">Belum ada transaksi untuk siswa ini.</td></tr>';
                 return;
             }
 
             denganSaldo.forEach(t => {
-                const isSetor = t.tipe === 'Setoran';
+                const positif = isPositifTipe(t.tipe);
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50">
-                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${formatTanggalTampilan(t.tanggal)}</td>
-                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${formatBulanTampilan(t.bulan) || namaBulan(t.tanggal)}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${t.tanggal}</td>
                         <td class="py-3 px-4">
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isSetor ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${tipeBadgeClass(t.tipe)}">
                                 ${t.tipe}
                             </span>
                         </td>
-                        <td class="py-3 px-4 text-right font-semibold ${isSetor ? 'text-emerald-600' : 'text-rose-600'}">
-                            ${isSetor ? '+' : '-'} Rp ${t.jumlah.toLocaleString('id-ID')}
+                        <td class="py-3 px-4 text-right font-semibold ${tipeAmountClass(t.tipe)}">
+                            ${positif ? '+' : '-'} Rp ${t.jumlah.toLocaleString('id-ID')}
                         </td>
-                        <td class="py-3 px-4 text-right font-semibold text-slate-700">Rp ${t.saldoBerjalan.toLocaleString('id-ID')}</td>
+                        <td class="py-3 px-4 text-right font-semibold ${t.saldoBerjalan < 0 ? 'text-amber-600' : 'text-slate-700'}">Rp ${t.saldoBerjalan.toLocaleString('id-ID')}</td>
                         <td class="py-3 px-4 text-slate-500">${t.keterangan || '-'}</td>
                     </tr>
                 `;
@@ -759,24 +636,23 @@
             tbody.innerHTML = '';
 
             if (hasil.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-400">Tidak ada transaksi yang cocok dengan filter.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-slate-400">Tidak ada transaksi yang cocok dengan filter.</td></tr>';
                 return;
             }
 
             hasil.forEach(t => {
-                const isSetor = t.tipe === 'Setoran';
+                const positif = isPositifTipe(t.tipe);
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50">
-                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${formatTanggalTampilan(t.tanggal)}</td>
-                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${formatBulanTampilan(t.bulan) || namaBulan(t.tanggal)}</td>
+                        <td class="py-3 px-4 whitespace-nowrap text-slate-500">${t.tanggal}</td>
                         <td class="py-3 px-4 font-medium text-slate-900">${t.namaSiswa}</td>
                         <td class="py-3 px-4">
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${isSetor ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${tipeBadgeClass(t.tipe)}">
                                 ${t.tipe}
                             </span>
                         </td>
-                        <td class="py-3 px-4 text-right font-semibold ${isSetor ? 'text-emerald-600' : 'text-rose-600'}">
-                            ${isSetor ? '+' : '-'} Rp ${t.jumlah.toLocaleString('id-ID')}
+                        <td class="py-3 px-4 text-right font-semibold ${tipeAmountClass(t.tipe)}">
+                            ${positif ? '+' : '-'} Rp ${t.jumlah.toLocaleString('id-ID')}
                         </td>
                         <td class="py-3 px-4 text-slate-500">${t.keterangan || '-'}</td>
                     </tr>
