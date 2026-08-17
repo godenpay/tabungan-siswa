@@ -69,29 +69,36 @@
                         <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Tanggal</label>
                         <input type="date" id="tglTx" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500">
                     </div>
-                    <div>
+                    <div id="wrapSiswaSelect">
                         <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Nama Siswa</label>
                         <select id="siswaSelect" required class="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500">
                             <option value="">-- Pilih Siswa --</option>
                         </select>
                     </div>
+                    <div id="wrapWaliKelas" class="hidden">
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Akun</label>
+                        <div class="w-full border border-amber-200 bg-amber-50 text-amber-800 rounded-xl px-4 py-2.5 text-sm font-medium flex items-center gap-2">
+                            <i data-lucide="user-cog" class="h-4 w-4"></i> Wali Kelas 7
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1.5">Peminjaman/pengembalian ini tidak memengaruhi saldo siswa mana pun.</p>
+                    </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Tipe Transaksi</label>
                         <div class="grid grid-cols-2 gap-3">
                             <label class="flex items-center justify-center gap-2 border border-slate-200 rounded-xl p-3 cursor-pointer hover:bg-slate-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50 text-sm">
-                                <input type="radio" name="tipeTx" value="Setoran" checked class="text-emerald-500 focus:ring-emerald-500"> Setoran
+                                <input type="radio" name="tipeTx" value="Setoran" checked onchange="updateFormUntukTipe()" class="text-emerald-500 focus:ring-emerald-500"> Setoran
                             </label>
                             <label class="flex items-center justify-center gap-2 border border-slate-200 rounded-xl p-3 cursor-pointer hover:bg-slate-50 has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/50 text-sm">
-                                <input type="radio" name="tipeTx" value="Penarikan" class="text-rose-500 focus:ring-rose-500"> Penarikan
+                                <input type="radio" name="tipeTx" value="Penarikan" onchange="updateFormUntukTipe()" class="text-rose-500 focus:ring-rose-500"> Penarikan
                             </label>
                             <label class="flex items-center justify-center gap-2 border border-slate-200 rounded-xl p-3 cursor-pointer hover:bg-slate-50 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/50 text-sm">
-                                <input type="radio" name="tipeTx" value="Peminjaman" class="text-amber-500 focus:ring-amber-500"> Peminjaman
+                                <input type="radio" name="tipeTx" value="Peminjaman" onchange="updateFormUntukTipe()" class="text-amber-500 focus:ring-amber-500"> Peminjaman
                             </label>
                             <label class="flex items-center justify-center gap-2 border border-slate-200 rounded-xl p-3 cursor-pointer hover:bg-slate-50 has-[:checked]:border-sky-500 has-[:checked]:bg-sky-50/50 text-sm">
-                                <input type="radio" name="tipeTx" value="Pengembalian" class="text-sky-500 focus:ring-sky-500"> Pengembalian
+                                <input type="radio" name="tipeTx" value="Pengembalian" onchange="updateFormUntukTipe()" class="text-sky-500 focus:ring-sky-500"> Pengembalian
                             </label>
                         </div>
-                        <p class="text-xs text-slate-400 mt-1.5">Peminjaman boleh membuat saldo minus (berutang). Pengembalian untuk melunasinya.</p>
+                        <p class="text-xs text-slate-400 mt-1.5">Peminjaman & Pengembalian dicatat khusus atas nama Wali Kelas 7, tidak menyentuh saldo siswa.</p>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Jumlah (Rp)</label>
@@ -142,12 +149,12 @@
                 <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
                     <i data-lucide="hand-coins" class="text-amber-500"></i> Status Pinjaman
                 </h2>
-                <p class="text-xs text-slate-400 mb-4">Siswa dengan saldo minus (sedang berutang), terpisah dari saldo tabungan biasa.</p>
+                <p class="text-xs text-slate-400 mb-4">Riwayat pinjaman & pengembalian atas nama Wali Kelas 7 — tidak memengaruhi saldo tabungan siswa mana pun.</p>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-100">
                         <thead>
                             <tr class="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                                <th class="py-3 px-4">Siswa</th>
+                                <th class="py-3 px-4">Akun</th>
                                 <th class="py-3 px-4 text-right">Total Dipinjam</th>
                                 <th class="py-3 px-4 text-right">Total Dikembalikan</th>
                                 <th class="py-3 px-4 text-right">Sisa Utang</th>
@@ -313,12 +320,38 @@
             return isPositifTipe(tipe) ? 'text-emerald-600' : (tipe === 'Peminjaman' ? 'text-amber-600' : 'text-rose-600');
         }
 
+        // Akun khusus untuk mencatat Peminjaman/Pengembalian yang dilakukan Wali Kelas 7 —
+        // sengaja disimpan sebagai "siswa" biasa di sheet supaya infrastruktur saldo &
+        // riwayat transaksi yang sudah ada bisa dipakai ulang, tapi dikecualikan dari
+        // dropdown Setoran/Penarikan biasa karena bukan siswa sungguhan.
+        const NAMA_WALI_KELAS = 'Wali Kelas 7';
+        let idWaliKelas = null;
+
         function renderSiswaSelect() {
             const select = document.getElementById('siswaSelect');
             select.innerHTML = '<option value="">-- Pilih Siswa --</option>';
             dbData.siswa.forEach(s => {
+                if (s.nama === NAMA_WALI_KELAS) {
+                    idWaliKelas = s.id;
+                    return; // jangan tampilkan di dropdown Setoran/Penarikan
+                }
                 select.innerHTML += `<option value="${s.id}" data-nama="${s.nama}" data-saldo="${s.saldo}">${s.nama} (Saldo: Rp ${s.saldo.toLocaleString('id-ID')})</option>`;
             });
+            updateFormUntukTipe();
+        }
+
+        // Tampilkan/sembunyikan pilihan Nama Siswa vs akun tetap Wali Kelas 7,
+        // tergantung tipe transaksi yang dipilih.
+        function updateFormUntukTipe() {
+            const tipe = document.querySelector('input[name="tipeTx"]:checked').value;
+            const wrapSiswa = document.getElementById('wrapSiswaSelect');
+            const wrapWali = document.getElementById('wrapWaliKelas');
+            const selectSiswa = document.getElementById('siswaSelect');
+            const untukWali = (tipe === 'Peminjaman' || tipe === 'Pengembalian');
+
+            wrapSiswa.classList.toggle('hidden', untukWali);
+            wrapWali.classList.toggle('hidden', !untukWali);
+            selectSiswa.required = !untukWali;
         }
 
         function renderDasbor() {
@@ -370,39 +403,51 @@
 
         async function simpanTransaksi(e) {
             e.preventDefault();
-            const selectEl = document.getElementById('siswaSelect');
-            const selectedOpt = selectEl.options[selectEl.selectedIndex];
+            const tipe = document.querySelector('input[name="tipeTx"]:checked').value;
+            const untukWali = (tipe === 'Peminjaman' || tipe === 'Pengembalian');
 
-            if (!selectEl.value) {
-                alert("Pilih siswa terlebih dahulu.");
-                return;
+            let idTarget, namaTarget, saldoTarget;
+
+            if (untukWali) {
+                if (!idWaliKelas) {
+                    alert('Akun Wali Kelas 7 belum ditemukan di database. Muat ulang halaman, atau hubungi admin.');
+                    return;
+                }
+                idTarget = idWaliKelas;
+                namaTarget = NAMA_WALI_KELAS;
+                const waliData = dbData.siswa.find(s => s.id === idWaliKelas);
+                saldoTarget = waliData ? waliData.saldo : 0;
+            } else {
+                const selectEl = document.getElementById('siswaSelect');
+                const selectedOpt = selectEl.options[selectEl.selectedIndex];
+                if (!selectEl.value) {
+                    alert("Pilih siswa terlebih dahulu.");
+                    return;
+                }
+                idTarget = selectEl.value;
+                namaTarget = selectedOpt.getAttribute('data-nama');
+                saldoTarget = Number(selectedOpt.getAttribute('data-saldo'));
             }
 
             const payload = {
                 action: 'catatTransaksi',
                 tanggal: document.getElementById('tglTx').value,
-                idSiswa: selectEl.value,
-                namaSiswa: selectedOpt.getAttribute('data-nama'),
-                tipe: document.querySelector('input[name="tipeTx"]:checked').value,
+                idSiswa: idTarget,
+                namaSiswa: namaTarget,
+                tipe: tipe,
                 jumlah: Number(document.getElementById('jumlahTx').value),
                 keterangan: document.getElementById('ketTx').value
             };
 
             // Validasi cepat di sisi client (server tetap memvalidasi ulang, ini hanya UX)
-            if (payload.tipe === 'Penarikan') {
-                const saldoSiswa = Number(selectedOpt.getAttribute('data-saldo'));
-                if (payload.jumlah > saldoSiswa) {
-                    alert(`Gagal! Saldo ${payload.namaSiswa} tidak mencukupi. (Sisa saldo: Rp ${saldoSiswa.toLocaleString('id-ID')})`);
-                    return;
-                }
+            if (payload.tipe === 'Penarikan' && payload.jumlah > saldoTarget) {
+                alert(`Gagal! Saldo ${namaTarget} tidak mencukupi. (Sisa saldo: Rp ${saldoTarget.toLocaleString('id-ID')})`);
+                return;
             }
-            if (payload.tipe === 'Peminjaman') {
-                const saldoSiswa = Number(selectedOpt.getAttribute('data-saldo'));
-                if (payload.jumlah > saldoSiswa) {
-                    const saldoBaru = saldoSiswa - payload.jumlah;
-                    const lanjut = confirm(`Saldo ${payload.namaSiswa} akan menjadi minus (Rp ${saldoBaru.toLocaleString('id-ID')}) setelah peminjaman ini. Lanjutkan?`);
-                    if (!lanjut) return;
-                }
+            if (payload.tipe === 'Peminjaman' && payload.jumlah > saldoTarget) {
+                const saldoBaru = saldoTarget - payload.jumlah;
+                const lanjut = confirm(`Saldo ${NAMA_WALI_KELAS} akan menjadi minus (Rp ${saldoBaru.toLocaleString('id-ID')}) setelah peminjaman ini. Lanjutkan?`);
+                if (!lanjut) return;
             }
 
             const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -528,7 +573,7 @@
                 .sort((a, b) => b.sisaUtang - a.sisaUtang);
 
             if (daftarUtang.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-slate-400">Tidak ada siswa yang sedang berutang. 🎉</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-slate-400">Belum ada pinjaman dari Wali Kelas 7 saat ini. 🎉</td></tr>';
                 return;
             }
 
